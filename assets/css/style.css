@@ -1,0 +1,123 @@
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body */
+body {
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    background-color: #f9f9f9;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Header */
+header {
+    background-color: #2c3e50; /* Dark professional tone */
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+    border-bottom: 4px solid #27ae60; /* Accent green */
+}
+
+header h1 {
+    font-size: 28px;
+    margin-bottom: 5px;
+}
+
+header p {
+    font-size: 14px;
+    color: #bdc3c7;
+}
+
+/* Tables */
+table {
+    width: 95%;
+    margin: 30px auto;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid #ddd;
+}
+
+th, td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #34495e;
+    color: #fff;
+    font-weight: 600;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Buttons */
+input[type=submit], button {
+    padding: 8px 15px;
+    background-color: #27ae60;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+input[type=submit]:hover, button:hover {
+    background-color: #1e8449;
+}
+
+/* Forms */
+form {
+    width: 60%;
+    margin: 20px auto;
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+form h2 {
+    margin-bottom: 15px;
+    font-size: 20px;
+    color: #2c3e50;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+/* Links */
+a.delete {
+    color: #c0392b;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+a.edit {
+    color: #2980b9;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+a.delete:hover, a.edit:hover {
+    text-decoration: underline;
+}
+
+/* Messages */
+.message {
+    text-align: center;
+    margin: 15px;
+    font-weight: bold;
+    color: #c0392b;
+}
