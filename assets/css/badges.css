@@ -1,0 +1,16 @@
+.badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+    color: #fff;
+}
+
+.badge-pending { background-color: #ffc107; }   /* amber */
+.badge-paid { background-color: #28a745; }      /* green */
+.badge-today { background-color: #007bff; }     /* blue */
+.badge-unpaid { background-color: #dc3545; }    /* red */
+.badge-active { background-color: #20c997; }    /* cyan */
+.badge-inactive { background-color: #6c757d; }  /* gray */

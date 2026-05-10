@@ -16,6 +16,9 @@ if (isset($_POST['update_payment'])) {
     $stmt = $conn->prepare("UPDATE invoices SET payment_status=?, payment_date=? WHERE invoice_id=?");
     $stmt->bind_param("ssi", $status, $date, $invoice_id);
     $stmt->execute();
+
+    $message = "Invoice #$invoice_id updated successfully!";
+    $msg_type = "success";
 }
 
 // Handle CSV export
@@ -23,18 +26,13 @@ if (isset($_POST['export_csv'])) {
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename=invoices.csv');
     $output = fopen('php://output', 'w');
-
-    // Column headers
     fputcsv($output, ['Invoice ID','Owner','Pet','Amount','Status','Payment Date']);
-
-    // Fetch data
     $sql = "SELECT invoices.*, pets.pet_name, owners.owner_name 
             FROM invoices
             JOIN appointments ON invoices.appointment_id = appointments.appointment_id
             JOIN pets ON appointments.pet_id = pets.pet_id
             JOIN owners ON pets.owner_id = owners.owner_id";
     $result = $conn->query($sql);
-
     while($row = $result->fetch_assoc()) {
         fputcsv($output, [
             $row['invoice_id'],
@@ -49,27 +47,46 @@ if (isset($_POST['export_csv'])) {
     exit;
 }
 
-// Handle PDF export
+// Handle PDF export with mPDF + CSS + Centered Watermark
 if (isset($_POST['export_pdf'])) {
-    require('../fpdf/fpdf.php'); // Make sure FPDF is installed in your project
+    require_once __DIR__ . '/../vendor/autoload.php';
+    $mpdf = new \Mpdf\Mpdf();
 
-    $pdf = new FPDF();
-    $pdf->AddPage();
-    $pdf->SetFont('Arial','B',16);
-    $pdf->Cell(0,10,'Veterinary Management System - Invoices',0,1,'C');
-    $pdf->Ln(10);
+    // Load CSS files
+    $css_theme  = file_get_contents(__DIR__ . '/../assets/css/theme.css');
+    $css_alerts = file_get_contents(__DIR__ . '/../assets/css/alerts.css');
+    $css_badges = file_get_contents(__DIR__ . '/../assets/css/badges.css');
 
-    // Table header
-    $pdf->SetFont('Arial','B',16);
-    $pdf->Cell(20,10,'ID',1);
-    $pdf->Cell(40,10,'Owner',1);
-    $pdf->Cell(30,10,'Pet',1);
-    $pdf->Cell(30,10,'Amount',1);
-    $pdf->Cell(30,10,'Status',1);
-    $pdf->Cell(40,10,'Date',1);
-    $pdf->Ln();
+    $mpdf->WriteHTML($css_theme, \Mpdf\HTMLParserMode::HEADER_CSS);
+    $mpdf->WriteHTML($css_alerts, \Mpdf\HTMLParserMode::HEADER_CSS);
+    $mpdf->WriteHTML($css_badges, \Mpdf\HTMLParserMode::HEADER_CSS);
 
-    // Fetch data
+    // Centered logo watermark
+$mpdf->SetWatermarkImage(__DIR__ . '/../assets/logo.png', 0.15, 'F', [20,40]);
+$mpdf->showWatermarkImage = true;
+
+
+    // Build HTML
+    $html = '
+    <div style="text-align:center;">
+        <img src="../assets/logo.png" width="80" style="float:left;">
+        <h2> Veterinary Clinic Kumba</h2>
+        <p>Phone: +237 6XX XXX XXX | Email: info@lovecarevms.com</p>
+        <h3>Veterinary Management System - Invoices</h3>
+    </div>
+    <table class="invoice-table" border="1" cellpadding="8" cellspacing="0" width="100%">
+        <thead>
+            <tr style="background:#eee;">
+                <th>ID</th>
+                <th>Owner</th>
+                <th>Pet</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>';
+
     $sql = "SELECT invoices.*, pets.pet_name, owners.owner_name 
             FROM invoices
             JOIN appointments ON invoices.appointment_id = appointments.appointment_id
@@ -77,18 +94,32 @@ if (isset($_POST['export_pdf'])) {
             JOIN owners ON pets.owner_id = owners.owner_id";
     $result = $conn->query($sql);
 
-    $pdf->SetFont('Arial','B',16);
+    $totalAmount = 0;
     while($row = $result->fetch_assoc()) {
-        $pdf->Cell(20,10,$row['invoice_id'],1);
-        $pdf->Cell(40,10,$row['owner_name'],1);
-        $pdf->Cell(30,10,$row['pet_name'],1);
-        $pdf->Cell(30,10,$row['amount'].' FCFA',1);
-        $pdf->Cell(30,10,$row['payment_status'],1);
-        $pdf->Cell(40,10,$row['payment_date'] ? $row['payment_date'] : '---',1);
-        $pdf->Ln();
+        $html .= '<tr>
+            <td>'.$row['invoice_id'].'</td>
+            <td>'.$row['owner_name'].'</td>
+            <td>'.$row['pet_name'].'</td>
+            <td>'.$row['amount'].' FCFA</td>
+            <td><span class="badge badge-'.strtolower($row['payment_status']).'">'.$row['payment_status'].'</span></td>
+            <td>'.($row['payment_date'] ? $row['payment_date'] : '---').'</td>
+        </tr>';
+        $totalAmount += $row['amount'];
     }
 
-    $pdf->Output();
+    $html .= '<tr class="total-row">
+        <td colspan="3">Total Amount</td>
+        <td colspan="3">'.$totalAmount.' FCFA</td>
+    </tr>';
+
+    $html .= '</tbody></table>';
+
+    // Footer
+    $mpdf->SetFooter('Page {PAGENO} of {nb} | Generated on '.date('Y-m-d H:i'));
+
+    // Output PDF
+    $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
+    $mpdf->Output('invoices.pdf','I');
     exit;
 }
 
@@ -104,27 +135,19 @@ $result = $conn->query($sql);
 <html>
 <head>
     <title>Invoices - VMS</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
-        header { background: green; color: white; padding: 20px; text-align: center; }
-        table { width: 90%; margin: 20px auto; border-collapse: collapse; background: #fff; }
-        th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
-        th { background: #eee; }
-        .paid { color: green; font-weight: bold; }
-        .pending { color: red; font-weight: bold; }
-        form { display: inline; }
-        input[type=submit] { padding: 5px 10px; background: green; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        input[type=submit]:hover { background: darkgreen; }
-        .export-btn { margin: 20px auto; text-align: center; }
-    </style>
+    <link rel="stylesheet" href="../assets/css/theme.css">
+    <link rel="stylesheet" href="../assets/css/alerts.css">
+    <link rel="stylesheet" href="../assets/css/badges.css">
 </head>
 <body>
-    <header>
-        <h1>Invoices</h1>
-        <p>Manage billing and payments</p>
-    </header>
+    <?php include('../includes/header.php'); ?>
+    <?php include('../includes/navbar.php'); ?>
 
-    <div class="export-btn">
+    <?php if(isset($message)): ?>
+        <div class="alert alert-<?php echo $msg_type; ?>"><?php echo $message; ?></div>
+    <?php endif; ?>
+
+    <div class="export-btn" style="text-align:center; margin:20px;">
         <form method="POST" action="invoices.php" style="display:inline;">
             <input type="submit" name="export_csv" value="Export to CSV">
         </form>
@@ -133,7 +156,7 @@ $result = $conn->query($sql);
         </form>
     </div>
 
-    <table>
+    <table class="invoice-table">
         <tr>
             <th>Invoice ID</th>
             <th>Owner</th>
@@ -149,8 +172,10 @@ $result = $conn->query($sql);
             <td><?php echo $row['owner_name']; ?></td>
             <td><?php echo $row['pet_name']; ?></td>
             <td><?php echo $row['amount']; ?> FCFA</td>
-            <td class="<?php echo strtolower($row['payment_status']); ?>">
-                <?php echo $row['payment_status']; ?>
+            <td>
+                <span class="badge badge-<?php echo strtolower($row['payment_status']); ?>">
+                    <?php echo $row['payment_status']; ?>
+                </span>
             </td>
             <td><?php echo $row['payment_date'] ? $row['payment_date'] : '---'; ?></td>
             <td>
@@ -166,5 +191,7 @@ $result = $conn->query($sql);
         </tr>
         <?php } ?>
     </table>
+
+    <?php include('../includes/footer.php'); ?>
 </body>
 </html>

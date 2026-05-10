@@ -452,15 +452,12 @@ function Image($file,$x,$y,$w,$h=0,$type='')
 			$type=substr($file,$pos+1);
 		}
 		$type=strtolower($type);
-		$mqr=get_magic_quotes_runtime();
-		set_magic_quotes_runtime(0);
 		if($type=='jpg' or $type=='jpeg')
 			$info=$this->_parsejpg($file);
 		elseif($type=='png')
 			$info=$this->_parsepng($file);
 		else
 			$this->Error('Unsupported image file type : '.$type);
-		set_magic_quotes_runtime($mqr);
 		$info['n']=count($this->images)+1;
 		$this->images[$file]=$info;
 	}
@@ -575,8 +572,7 @@ function _enddoc()
 {
 	//Fonts
 	$nf=$this->n;
-	reset($this->fonts);
-	while(list($name)=each($this->fonts))
+	foreach($this->fonts as $name => $dummy)
 	{
 		$this->_newobj();
 		$this->_out('<< /Type /Font');
@@ -590,8 +586,7 @@ function _enddoc()
 	//Images
 	$ni=$this->n;
 	reset($this->images);
-	while(list($file,$info)=each($this->images))
-	{
+	foreach($this->images as $file => $info) {
 		$this->_newobj();
 		$this->_out('<< /Type /XObject');
 		$this->_out('/Subtype /Image');
@@ -605,12 +600,20 @@ function _enddoc()
 		$this->_out('/Filter /'.$info['f']);
 		if(isset($info['parms']))
 			$this->_out($info['parms']);
-		if(isset($info['trns']) and is_array($info['trns']))
+		if(isset($info['trns']))
 		{
-			$trns='';
-			for($i=0;$i<count($info['trns']);$i++)
-				$trns.=$info['trns'][$i].' '.$info['trns'][$i].' ';
-			$this->_out('/Mask ['.$trns.']');
+			$trns = $info['trns'];
+			if(is_array($trns))
+			{
+				$mask='';
+				foreach($trns as $value)
+					$mask .= $value . ' ' . $value . ' ';
+				$this->_out('/Mask ['.$mask.']');
+			}
+			elseif(is_numeric($trns))
+			{
+				$this->_out('/Mask ' . $trns);
+			}
 		}
 		$this->_out('/Length '.strlen($info['data']).' >>');
 		$this->_out('stream');
@@ -645,10 +648,8 @@ function _enddoc()
 	$this->_out('>>');
 	$this->_out('/XObject <<');
 	$nbpal=0;
-	reset($this->images);
-	while(list(,$info)=each($this->images))
-	{
-		$this->_out('/I'.$info['n'].' '.($ni+$info['n']+$nbpal).' 0 R');
+	foreach($this->images as $info) {
+		$this->_out('/I'.($info['n']+$nbpal).' 0 R');
 		if($info['cs']=='Indexed')
 			$nbpal++;
 	}

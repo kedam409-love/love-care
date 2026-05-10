@@ -1,0 +1,40 @@
+/* nav.css — styling for navbar.php */
+
+nav {
+    background: #000c1a;
+    padding: 10px;
+    text-align: center;
+}
+
+nav a {
+    color: #fff;
+    margin: 0 15px;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 8px 12px; /* add padding for background effect */
+    border-radius: 5px; /* rounded corners */
+    transition: color 0.3s ease, border-bottom 0.3s ease, background-color 0.3s ease;
+}
+
+nav a:hover {
+    color: #1e90ff; /* default hover text color */
+    background-color: rgba(255, 255, 255, 0.1); /* subtle dark highlight */
+}
+
+nav a.active {
+    color: #ffcc00 !important; /* active link highlight */
+    border-bottom: 2px solid #ffcc00;
+    background-color: rgba(255, 255, 255, 0.15); /* stronger highlight for active */
+}
+
+/* 🎨 Icon-specific hover colors */
+nav a:hover i.fa-dog { color: #28a745; }          /* green for pets */
+nav a:hover i.fa-calendar-check { color: #007bff; } /* blue for appointments */
+nav a:hover i.fa-stethoscope { color: #17a2b8; }  /* teal for consultations */
+nav a:hover i.fa-file-invoice-dollar { color: #ffc107; } /* amber for invoices */
+nav a:hover i.fa-chart-line { color: #fd7e14; }   /* orange for reports */
+nav a:hover i.fa-bell { color: #dc3545; }         /* red for notifications */
+nav a:hover i.fa-users,
+nav a:hover i.fa-user { color: #20c997; }         /* cyan for users/pet owners */
+nav a:hover i.fa-gauge { color: #0d6efd; }        /* dashboard blue */
+nav a:hover i.fa-right-from-bracket { color: #ff4444; } /* logout red */

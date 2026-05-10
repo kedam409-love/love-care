@@ -1,0 +1,18 @@
+/* Alerts.css — reusable alert styles */
+
+.alert {
+  padding: 10px;
+  border-radius: 6px;
+  margin: 8px 0;
+  font-weight: bold;
+}
+
+.alert-warning {
+  background: #ff9800; /* Orange */
+  color: white;
+}
+
+.alert-danger {
+  background: #c0392b; /* Red */
+  color: white;
+}
