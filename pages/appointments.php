@@ -8,12 +8,26 @@ if (!isset($_SESSION['user'])) {
     exit;
 }
 
-// Handle form submission
+$role = $_SESSION['user']['role'];
+$user_id = $_SESSION['user']['id'];
+
+// Handle form submission (Pet Owners booking their own appointments)
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['book_appointment'])) {
     $pet_id = $_POST['pet_id'];
     $vet_id = $_POST['vet_id'];
     $date = $_POST['appointment_date'];
     $time = $_POST['appointment_time'];
+
+    // Ensure PetOwner can only book for their own pets
+    if ($role === 'PetOwner') {
+        $check = $conn->prepare("SELECT pet_id FROM pets WHERE pet_id=? AND owner_id=?");
+        $check->bind_param("ii", $pet_id, $user_id);
+        $check->execute();
+        $checkResult = $check->get_result();
+        if ($checkResult->num_rows === 0) {
+            die("Unauthorized booking attempt.");
+        }
+    }
 
     if (!empty($pet_id) && !empty($vet_id) && !empty($date) && !empty($time)) {
         $stmt = $conn->prepare("INSERT INTO appointments (pet_id, vet_id, appointment_date, appointment_time, status) VALUES (?, ?, ?, ?, 'Scheduled')");
@@ -22,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['book_appointment'])) {
     }
 }
 
-// Handle PDF export
+// Handle PDF export (role-based)
 if (isset($_POST['export_pdf'])) {
     require_once __DIR__ . '/../vendor/autoload.php';
     $mpdf = new \Mpdf\Mpdf();
@@ -35,7 +49,7 @@ if (isset($_POST['export_pdf'])) {
     $mpdf->WriteHTML($css_alerts, \Mpdf\HTMLParserMode::HEADER_CSS);
     $mpdf->WriteHTML($css_badges, \Mpdf\HTMLParserMode::HEADER_CSS);
 
-    // Centered logo watermark
+    // Watermark
     $mpdf->SetWatermarkImage(__DIR__ . '/../assets/logo.png', 0.15, 'F', [20,40]);
     $mpdf->showWatermarkImage = true;
 
@@ -44,7 +58,7 @@ if (isset($_POST['export_pdf'])) {
     <div style="text-align:center;">
         <img src="../assets/logo.png" width="80" style="float:left;">
         <h2>Veterinary Clinic Kumba</h2>
-        <p>Phone: +237 6XX XXX XXX | Email: info@lovecarevms.com</p>
+        <p>Phone: +237 621726670 | Email: kedam409@gmail.com</p>
         <h3>Veterinary Management System - Appointments</h3>
     </div>
     <table class="table" border="1" cellpadding="8" cellspacing="0" width="100%">
@@ -55,11 +69,34 @@ if (isset($_POST['export_pdf'])) {
         </thead>
         <tbody>';
 
-    $result = $conn->query("SELECT a.*, p.pet_name, u.full_name AS vet_name 
-                            FROM appointments a 
-                            JOIN pets p ON a.pet_id=p.pet_id 
-                            LEFT JOIN users u ON a.vet_id=u.user_id
-                            ORDER BY a.appointment_date, a.appointment_time");
+    // Role-based query
+    if ($role === 'PetOwner') {
+        $stmt = $conn->prepare("SELECT a.*, p.pet_name, u.full_name AS vet_name 
+                                FROM appointments a 
+                                JOIN pets p ON a.pet_id=p.pet_id 
+                                LEFT JOIN users u ON a.vet_id=u.user_id
+                                WHERE p.owner_id=? 
+                                ORDER BY a.appointment_date, a.appointment_time");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    } elseif ($role === 'Veterinarian') {
+        $stmt = $conn->prepare("SELECT a.*, p.pet_name, u.full_name AS vet_name 
+                                FROM appointments a 
+                                JOIN pets p ON a.pet_id=p.pet_id 
+                                LEFT JOIN users u ON a.vet_id=u.user_id
+                                WHERE a.vet_id=? 
+                                ORDER BY a.appointment_date, a.appointment_time");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    } else {
+        $result = $conn->query("SELECT a.*, p.pet_name, u.full_name AS vet_name 
+                                FROM appointments a 
+                                JOIN pets p ON a.pet_id=p.pet_id 
+                                LEFT JOIN users u ON a.vet_id=u.user_id
+                                ORDER BY a.appointment_date, a.appointment_time");
+    }
 
     while($row = $result->fetch_assoc()) {
         $html .= '<tr>
@@ -73,22 +110,40 @@ if (isset($_POST['export_pdf'])) {
     }
 
     $html .= '</tbody></table>';
-
-    // Footer
     $mpdf->SetFooter('Page {PAGENO} of {nb} | Generated on '.date('Y-m-d H:i'));
-
-    // Output PDF
     $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
     $mpdf->Output('appointments.pdf','I');
     exit;
 }
 
-// Fetch appointments for display
-$result = $conn->query("SELECT a.*, p.pet_name, u.full_name AS vet_name 
-                        FROM appointments a 
-                        JOIN pets p ON a.pet_id=p.pet_id 
-                        LEFT JOIN users u ON a.vet_id=u.user_id
-                        ORDER BY a.appointment_date, a.appointment_time");
+// Fetch appointments for display (role-based)
+if ($role === 'PetOwner') {
+    $stmt = $conn->prepare("SELECT a.*, p.pet_name, u.full_name AS vet_name 
+                            FROM appointments a 
+                            JOIN pets p ON a.pet_id=p.pet_id 
+                            LEFT JOIN users u ON a.vet_id=u.user_id
+                            WHERE p.owner_id=? 
+                            ORDER BY a.appointment_date, a.appointment_time");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} elseif ($role === 'Veterinarian') {
+    $stmt = $conn->prepare("SELECT a.*, p.pet_name, u.full_name AS vet_name 
+                            FROM appointments a 
+                            JOIN pets p ON a.pet_id=p.pet_id 
+                            LEFT JOIN users u ON a.vet_id=u.user_id
+                            WHERE a.vet_id=? 
+                            ORDER BY a.appointment_date, a.appointment_time");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} else {
+    $result = $conn->query("SELECT a.*, p.pet_name, u.full_name AS vet_name 
+                            FROM appointments a 
+                            JOIN pets p ON a.pet_id=p.pet_id 
+                            LEFT JOIN users u ON a.vet_id=u.user_id
+                            ORDER BY a.appointment_date, a.appointment_time");
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -97,6 +152,7 @@ $result = $conn->query("SELECT a.*, p.pet_name, u.full_name AS vet_name
     <link rel="stylesheet" href="../assets/css/theme.css">
     <link rel="stylesheet" href="../assets/css/alerts.css">
     <link rel="stylesheet" href="../assets/css/badges.css">
+    <link rel="stylesheet" href="../assets/css/res.css">
 </head>
 <body>
 <?php include('../includes/header.php'); ?>
@@ -105,6 +161,8 @@ $result = $conn->query("SELECT a.*, p.pet_name, u.full_name AS vet_name
 <div class="container">
     <h2>Appointment Scheduling</h2>
 
+    <?php if ($role === 'PetOwner'): ?>
+    <!-- Pet Owners can book appointments -->
     <form method="POST" class="form-inline">
         <input type="number" name="pet_id" placeholder="Pet ID" required>
         <input type="number" name="vet_id" placeholder="Vet ID" required>
@@ -112,6 +170,7 @@ $result = $conn->query("SELECT a.*, p.pet_name, u.full_name AS vet_name
         <input type="time" name="appointment_time" required>
         <input type="submit" name="book_appointment" value="Book Appointment">
     </form>
+    <?php endif; ?>
 
     <div class="export-btn" style="margin:15px 0;">
         <form method="POST" action="appointments.php" style="display:inline;">

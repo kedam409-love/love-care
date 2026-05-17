@@ -16,6 +16,7 @@ if (isset($_POST['add_user'])) {
     $username = $_POST['username'];
     $contact = $_POST['contact'];
     $email = $_POST['email'];
+    // Receptionists can only add Pet Owners
     $role = ($_SESSION['user']['role'] == 'Receptionist') ? 'PetOwner' : $_POST['role'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
@@ -40,7 +41,12 @@ if (isset($_POST['add_user'])) {
 // Handle Delete User
 if (isset($_GET['delete'])) {
     $id = $_GET['delete'];
-    $stmt = $conn->prepare("DELETE FROM users WHERE user_id=?");
+    // Receptionists can only delete Pet Owners
+    if ($_SESSION['user']['role'] == 'Receptionist') {
+        $stmt = $conn->prepare("DELETE FROM users WHERE user_id=? AND role='PetOwner'");
+    } else {
+        $stmt = $conn->prepare("DELETE FROM users WHERE user_id=?");
+    }
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $message = "User deleted successfully.";
@@ -89,6 +95,7 @@ if ($_SESSION['user']['role'] == 'Receptionist') {
     <title>Manage Users - VMS</title>
     <link rel="stylesheet" href="../assets/css/theme.css">
     <link rel="stylesheet" href="../assets/css/alerts.css">
+    <link rel="stylesheet" href="../assets/css/res.css">
 </head>
 <body>
     <?php include '../includes/header.php'; ?>
@@ -183,24 +190,24 @@ if ($_SESSION['user']['role'] == 'Receptionist') {
                 <input type="text" name="contact" value="<?php echo $user['contact']; ?>" required>
                 <input type="email" name="email" value="<?php echo $user['email']; ?>" required>
 
-                <?php if ($_SESSION['user']['role'] == 'Administrator') { ?>
-                    <select name="role" required>
-                        <option value="Administrator" <?php if($user['role']=='Administrator') echo 'selected'; ?>>Administrator</option>
-                        <option value="Veterinarian" <?php if($user['role']=='Veterinarian') echo 'selected'; ?>>Veterinarian</option>
-                        <option value="Receptionist" <?php if($user['role']=='Receptionist') echo 'selected'; ?>>Receptionist</option>
-                        <option value="PetOwner" <?php if($user['role']=='PetOwner') echo 'selected'; ?>>Pet Owner</option>
-                    </select>
-                <?php } else { ?>
-                    <!-- Receptionists can only edit Pet Owners -->
-                    <input type="hidden" name="role" value="PetOwner">
-                <?php } ?>
+               <?php if ($_SESSION['user']['role'] == 'Administrator') { ?>
+    <select name="role" required>
+        <option value="Administrator" <?php if($user['role']=='Administrator') echo 'selected'; ?>>Administrator</option>
+        <option value="Veterinarian" <?php if($user['role']=='Veterinarian') echo 'selected'; ?>>Veterinarian</option>
+        <option value="Receptionist" <?php if($user['role']=='Receptionist') echo 'selected'; ?>>Receptionist</option>
+        <option value="PetOwner" <?php if($user['role']=='PetOwner') echo 'selected'; ?>>Pet Owner</option>
+    </select>
+<?php } else { ?>
+    <!-- Receptionists can only edit Pet Owners -->
+    <input type="hidden" name="role" value="PetOwner">
+<?php } ?>
 
-                <input type="password" name="password" placeholder="Leave blank to keep current password">
-                <input type="submit" name="edit_user" value="Update User">
-            </form>
-        </div>
-    </div>
-    <?php } // end if edit ?>
+<input type="password" name="password" placeholder="Leave blank to keep current password">
+<input type="submit" name="edit_user" value="Update User">
+</form>
+</div>
+</div>
+<?php } // end if edit ?>
 
 <?php include '../includes/footer.php'; ?>
 </body>

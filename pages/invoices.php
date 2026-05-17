@@ -7,8 +7,11 @@ if (!isset($_SESSION['user'])) {
 
 include('../config/db.php');
 
-// Handle payment update
-if (isset($_POST['update_payment'])) {
+$role = $_SESSION['user']['role'];
+$user_id = $_SESSION['user']['id'];
+
+// Handle payment update (only Receptionist/Admin)
+if (isset($_POST['update_payment']) && ($role === 'Receptionist' || $role === 'Administrator')) {
     $invoice_id = $_POST['invoice_id'];
     $status = $_POST['payment_status'];
     $date = ($status == 'Paid') ? date('Y-m-d') : NULL;
@@ -21,18 +24,20 @@ if (isset($_POST['update_payment'])) {
     $msg_type = "success";
 }
 
-// Handle CSV export
-if (isset($_POST['export_csv'])) {
+// Handle CSV export (only Receptionist/Admin)
+if (isset($_POST['export_csv']) && ($role === 'Receptionist' || $role === 'Administrator')) {
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename=invoices.csv');
     $output = fopen('php://output', 'w');
     fputcsv($output, ['Invoice ID','Owner','Pet','Amount','Status','Payment Date']);
+
     $sql = "SELECT invoices.*, pets.pet_name, owners.owner_name 
             FROM invoices
             JOIN appointments ON invoices.appointment_id = appointments.appointment_id
             JOIN pets ON appointments.pet_id = pets.pet_id
             JOIN owners ON pets.owner_id = owners.owner_id";
     $result = $conn->query($sql);
+
     while($row = $result->fetch_assoc()) {
         fputcsv($output, [
             $row['invoice_id'],
@@ -47,12 +52,11 @@ if (isset($_POST['export_csv'])) {
     exit;
 }
 
-// Handle PDF export with mPDF + CSS + Centered Watermark
+// Handle PDF export (all roles, but filtered)
 if (isset($_POST['export_pdf'])) {
     require_once __DIR__ . '/../vendor/autoload.php';
     $mpdf = new \Mpdf\Mpdf();
 
-    // Load CSS files
     $css_theme  = file_get_contents(__DIR__ . '/../assets/css/theme.css');
     $css_alerts = file_get_contents(__DIR__ . '/../assets/css/alerts.css');
     $css_badges = file_get_contents(__DIR__ . '/../assets/css/badges.css');
@@ -61,38 +65,53 @@ if (isset($_POST['export_pdf'])) {
     $mpdf->WriteHTML($css_alerts, \Mpdf\HTMLParserMode::HEADER_CSS);
     $mpdf->WriteHTML($css_badges, \Mpdf\HTMLParserMode::HEADER_CSS);
 
-    // Centered logo watermark
-$mpdf->SetWatermarkImage(__DIR__ . '/../assets/logo.png', 0.15, 'F', [20,40]);
-$mpdf->showWatermarkImage = true;
+    $mpdf->SetWatermarkImage(__DIR__ . '/../assets/logo.png', 0.15, 'F', [20,40]);
+    $mpdf->showWatermarkImage = true;
 
-
-    // Build HTML
     $html = '
     <div style="text-align:center;">
         <img src="../assets/logo.png" width="80" style="float:left;">
-        <h2> Veterinary Clinic Kumba</h2>
-        <p>Phone: +237 6XX XXX XXX | Email: info@lovecarevms.com</p>
+        <h2>Veterinary Clinic Kumba</h2>
+        <p>Phone: +237 621726670 | Email: kedam409@gmail.com</p>
         <h3>Veterinary Management System - Invoices</h3>
     </div>
     <table class="invoice-table" border="1" cellpadding="8" cellspacing="0" width="100%">
         <thead>
             <tr style="background:#eee;">
-                <th>ID</th>
-                <th>Owner</th>
-                <th>Pet</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Date</th>
+                <th>ID</th><th>Owner</th><th>Pet</th><th>Amount</th><th>Status</th><th>Date</th>
             </tr>
         </thead>
         <tbody>';
 
-    $sql = "SELECT invoices.*, pets.pet_name, owners.owner_name 
-            FROM invoices
-            JOIN appointments ON invoices.appointment_id = appointments.appointment_id
-            JOIN pets ON appointments.pet_id = pets.pet_id
-            JOIN owners ON pets.owner_id = owners.owner_id";
-    $result = $conn->query($sql);
+    // Role-based query
+    if ($role === 'PetOwner') {
+        $stmt = $conn->prepare("SELECT invoices.*, pets.pet_name, owners.owner_name 
+                                FROM invoices
+                                JOIN appointments ON invoices.appointment_id = appointments.appointment_id
+                                JOIN pets ON appointments.pet_id = pets.pet_id
+                                JOIN owners ON pets.owner_id = owners.owner_id
+                                WHERE owners.owner_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    } elseif ($role === 'Veterinarian') {
+        $stmt = $conn->prepare("SELECT invoices.*, pets.pet_name, owners.owner_name 
+                                FROM invoices
+                                JOIN appointments ON invoices.appointment_id = appointments.appointment_id
+                                JOIN pets ON appointments.pet_id = pets.pet_id
+                                JOIN owners ON pets.owner_id = owners.owner_id
+                                WHERE appointments.vet_id=?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    } else {
+        $sql = "SELECT invoices.*, pets.pet_name, owners.owner_name 
+                FROM invoices
+                JOIN appointments ON invoices.appointment_id = appointments.appointment_id
+                JOIN pets ON appointments.pet_id = pets.pet_id
+                JOIN owners ON pets.owner_id = owners.owner_id";
+        $result = $conn->query($sql);
+    }
 
     $totalAmount = 0;
     while($row = $result->fetch_assoc()) {
@@ -113,23 +132,41 @@ $mpdf->showWatermarkImage = true;
     </tr>';
 
     $html .= '</tbody></table>';
-
-    // Footer
     $mpdf->SetFooter('Page {PAGENO} of {nb} | Generated on '.date('Y-m-d H:i'));
-
-    // Output PDF
     $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
     $mpdf->Output('invoices.pdf','I');
     exit;
 }
 
-// Fetch invoices for display
-$sql = "SELECT invoices.*, pets.pet_name, owners.owner_name 
-        FROM invoices
-        JOIN appointments ON invoices.appointment_id = appointments.appointment_id
-        JOIN pets ON appointments.pet_id = pets.pet_id
-        JOIN owners ON pets.owner_id = owners.owner_id";
-$result = $conn->query($sql);
+// Fetch invoices for display (role-based)
+if ($role === 'PetOwner') {
+    $stmt = $conn->prepare("SELECT invoices.*, pets.pet_name, owners.owner_name 
+                            FROM invoices
+                            JOIN appointments ON invoices.appointment_id = appointments.appointment_id
+                            JOIN pets ON appointments.pet_id = pets.pet_id
+                            JOIN owners ON pets.owner_id = owners.owner_id
+                            WHERE owners.owner_id=?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} elseif ($role === 'Veterinarian') {
+    $stmt = $conn->prepare("SELECT invoices.*, pets.pet_name, owners.owner_name 
+                            FROM invoices
+                            JOIN appointments ON invoices.appointment_id = appointments.appointment_id
+                            JOIN pets ON appointments.pet_id = pets.pet_id
+                            JOIN owners ON pets.owner_id = owners.owner_id
+                            WHERE appointments.vet_id=?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} else {
+    $sql = "SELECT invoices.*, pets.pet_name, owners.owner_name 
+            FROM invoices
+            JOIN appointments ON invoices.appointment_id = appointments.appointment_id
+            JOIN pets ON appointments.pet_id = pets.pet_id
+            JOIN owners ON pets.owner_id = owners.owner_id";
+    $result = $conn->query($sql);
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -138,6 +175,7 @@ $result = $conn->query($sql);
     <link rel="stylesheet" href="../assets/css/theme.css">
     <link rel="stylesheet" href="../assets/css/alerts.css">
     <link rel="stylesheet" href="../assets/css/badges.css">
+    <link rel="stylesheet" href="../assets/css/res.css">
 </head>
 <body>
     <?php include('../includes/header.php'); ?>
@@ -147,51 +185,63 @@ $result = $conn->query($sql);
         <div class="alert alert-<?php echo $msg_type; ?>"><?php echo $message; ?></div>
     <?php endif; ?>
 
-    <div class="export-btn" style="text-align:center; margin:20px;">
+   <div style="text-align:center; margin:20px 0;">
+    <?php if ($role === 'Receptionist' || $role === 'Administrator'): ?>
+        <!-- Receptionists/Admins → CSV + PDF -->
         <form method="POST" action="invoices.php" style="display:inline;">
-            <input type="submit" name="export_csv" value="Export to CSV">
+            <input type="submit" name="export_csv" value="📄 CSV" class="btn-green">
         </form>
         <form method="POST" action="invoices.php" style="display:inline;">
-            <input type="submit" name="export_pdf" value="Export to PDF">
+            <input type="submit" name="export_pdf" value="📑 PDF" class="btn-blue">
         </form>
-    </div>
+    <?php elseif ($role === 'PetOwner' || $role === 'Veterinarian'): ?>
+        <!-- Pet Owners/Vets → PDF only -->
+        <form method="POST" action="invoices.php" style="display:inline;">
+            <input type="submit" name="export_pdf" value="📑 Download My Invoices" class="btn-blue">
+        </form>
+    <?php endif; ?>
+</div>
 
-    <table class="invoice-table">
-        <tr>
-            <th>Invoice ID</th>
-            <th>Owner</th>
-            <th>Pet</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Payment Date</th>
+<table class="invoice-table">
+    <tr>
+        <th>Invoice ID</th>
+        <th>Owner</th>
+        <th>Pet</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Payment Date</th>
+        <?php if ($role === 'Receptionist' || $role === 'Administrator'): ?>
             <th>Action</th>
-        </tr>
-        <?php while($row = $result->fetch_assoc()) { ?>
-        <tr>
-            <td><?php echo $row['invoice_id']; ?></td>
-            <td><?php echo $row['owner_name']; ?></td>
-            <td><?php echo $row['pet_name']; ?></td>
-            <td><?php echo $row['amount']; ?> FCFA</td>
-            <td>
-                <span class="badge badge-<?php echo strtolower($row['payment_status']); ?>">
-                    <?php echo $row['payment_status']; ?>
-                </span>
-            </td>
-            <td><?php echo $row['payment_date'] ? $row['payment_date'] : '---'; ?></td>
-            <td>
-                <form method="POST" action="invoices.php">
-                    <input type="hidden" name="invoice_id" value="<?php echo $row['invoice_id']; ?>">
-                    <select name="payment_status">
-                        <option value="Paid" <?php if($row['payment_status']=='Paid') echo 'selected'; ?>>Paid</option>
-                        <option value="Pending" <?php if($row['payment_status']=='Pending') echo 'selected'; ?>>Pending</option>
-                    </select>
-                    <input type="submit" name="update_payment" value="Update">
-                </form>
-            </td>
-        </tr>
-        <?php } ?>
-    </table>
+        <?php endif; ?>
+    </tr>
+    <?php while($row = $result->fetch_assoc()) { ?>
+    <tr>
+        <td><?php echo $row['invoice_id']; ?></td>
+        <td><?php echo $row['owner_name']; ?></td>
+        <td><?php echo $row['pet_name']; ?></td>
+        <td><?php echo $row['amount']; ?> FCFA</td>
+        <td>
+            <span class="badge badge-<?php echo strtolower($row['payment_status']); ?>">
+                <?php echo $row['payment_status']; ?>
+            </span>
+        </td>
+        <td><?php echo $row['payment_date'] ? $row['payment_date'] : '---'; ?></td>
+        <?php if ($role === 'Receptionist' || $role === 'Administrator'): ?>
+        <td>
+            <form method="POST" action="invoices.php" style="display:inline;">
+                <input type="hidden" name="invoice_id" value="<?php echo $row['invoice_id']; ?>">
+                <select name="payment_status" class="btn-small">
+                    <option value="Paid" <?php if($row['payment_status']=='Paid') echo 'selected'; ?>>Paid</option>
+                    <option value="Pending" <?php if($row['payment_status']=='Pending') echo 'selected'; ?>>Pending</option>
+                </select>
+                <input type="submit" name="update_payment" value="Update" class="btn-blue btn-small">
+            </form>
+        </td>
+        <?php endif; ?>
+    </tr>
+    <?php } ?>
+</table>
 
-    <?php include('../includes/footer.php'); ?>
+<?php include('../includes/footer.php'); ?>
 </body>
 </html>

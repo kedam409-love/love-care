@@ -2,12 +2,17 @@
 include('../config/db.php');
 session_start();
 
-// Redirect if not logged in
 if (!isset($_SESSION['user'])) {
     header("Location: login.php");
     exit;
 }
 
+// Filter consultations by pet if pet_id is passed
+$where = "";
+if (isset($_GET['pet_id'])) {
+    $pet_id = intval($_GET['pet_id']);
+    $where = "WHERE c.pet_id = $pet_id";
+}
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $appointment_id = $_POST['appointment_id'];
@@ -21,18 +26,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 // Fetch consultations
-$result = $conn->query("SELECT c.*, p.pet_name, u.full_name AS vet_name, a.appointment_date 
-                        FROM consultations c
-                        JOIN appointments a ON c.appointment_id=a.appointment_id
-                        JOIN pets p ON a.pet_id=p.pet_id
-                        LEFT JOIN users u ON a.vet_id=u.user_id
-                        ORDER BY a.appointment_date DESC");
+$sql = "SELECT c.*, p.pet_name, u.full_name AS vet_name 
+        FROM consultations c
+        JOIN pets p ON c.pet_id=p.pet_id
+        LEFT JOIN users u ON c.vet_id=u.user_id
+        $where
+        ORDER BY c.consultation_date DESC";
+$result = $conn->query($sql);
 ?>
+
 <!DOCTYPE html>
 <html>
 <head>
     <title>Consultations</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/res.css">
 </head>
 <body>
 <?php include('../includes/header.php'); ?>

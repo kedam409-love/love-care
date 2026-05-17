@@ -55,6 +55,7 @@ if (isset($_POST['export_pdf'])) {
 <head>
     <title>Clinic Reports</title>
     <link rel="stylesheet" href="../assets/css/theme.css">
+    <link rel="stylesheet" href="../assets/css/res.css">
 </head>
 <body>
 <?php include('../includes/header.php'); ?>

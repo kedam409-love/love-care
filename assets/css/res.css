@@ -1,0 +1,53 @@
+/* Global reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body */
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #f9f9f9;
+}
+
+/* Containers */
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* Responsive images */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Responsive tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+table td, table th {
+    padding: 10px;
+    word-wrap: break-word;
+}
+
+/* Media queries */
+@media (max-width: 768px) {
+    .container {
+        width: 95%;
+    }
+    nav .nav-links {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+    table tr {
+        margin-bottom: 15px;
+    }
+}

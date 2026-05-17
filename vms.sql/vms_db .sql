@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 09, 2026 at 04:51 AM
+-- Generation Time: May 16, 2026 at 06:52 AM
 -- Server version: 10.4.24-MariaDB
 -- PHP Version: 8.1.6
 
@@ -115,6 +115,21 @@ INSERT INTO `invoices` (`invoice_id`, `appointment_id`, `amount`, `payment_statu
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `messages`
+--
+
+CREATE TABLE `messages` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `email` varchar(150) NOT NULL,
+  `message` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `status` varchar(20) DEFAULT 'Unread'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `notifications`
 --
 
@@ -131,7 +146,7 @@ CREATE TABLE `notifications` (
 --
 
 INSERT INTO `notifications` (`notification_id`, `user_id`, `message`, `status`, `notification_date`) VALUES
-(1, 1, 'Low stock alert: Rabies Vaccine has only 2 left.', 'Unread', '2026-04-28 02:53:38');
+(1, 1, 'Low stock alert: Rabies Vaccine has only 2 left.', 'Read', '2026-04-28 02:53:38');
 
 -- --------------------------------------------------------
 
@@ -199,12 +214,14 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `username`, `password`, `role`, `full_name`, `contact`, `email`) VALUES
-(1, 'admin', '$2y$10$R/e5oQvYdjxq7grYn7FvPOuO4L8oU8Y.hY2QsPhEodpcmpvd1YqM2', 'Administrator', 'Clinic Admin', '69810000', 'admin@gmail.com'),
-(2, 'vet1', '$2y$10$FNQ1mYUQvhCt6UB4uZuoweQnZ0I.XrCXslhM12ryRtOietn3MjuHS', 'Veterinarian', 'Dr. Stella', '640000111', 'vet1@gmail.com'),
-(3, 'recept', '$2y$10$L4hMpffnKKzxGbBPrnM.9e06f1RzPvnWVJBeY7yfw.SbJsdQ.HbdK', 'Receptionist', 'Mary Joy.', '69922224', 'recept@gmail.com'),
-(4, 'Naomi', '$2y$10$kbQy6fsamuHdnulhgIYNHO3WpQxRtVDCTXoG2Pv3/MtM0nHrHCZUi', 'PetOwner', 'Naomi Muzam', '64321098', 'naomi@gmail.com'),
-(5, ' Love', '$2y$10$Q1yyE7dImB/JCKgbGQ0nju2H9YgB8r1xbmR0KqH1a6V0WZGn2Bphu', 'PetOwner', 'Muzy Love', '687003047', 'kedam409@gmail.com'),
-(8, 'Grace', '$2y$10$/DTDqMZbrBor9kL.dN.lTu/NGGSckb/qvzvJ4/o0y7IIeGwV1FJli', 'PetOwner', 'Angle Grace', '68888000', 'grace@gmail.com');
+(1, 'admin', '$2y$10$XteSjosLQR3wyXWbWhf6sety9CPLFkt.IIRJ3sXc8V44OGaWq8qm2', 'Administrator', 'Clinic Admin', '69810000', 'admin@gmail.com'),
+(2, 'vet1', '$2y$10$oA.Z6VuA2OnQg8Lw3gw6guYkOJqCavbk8dRSeFV6sr3baMBvucNWq', 'Veterinarian', 'Dr. Stella', '640000111', 'vet1@gmail.com'),
+(3, 'recept', '$2y$10$GCz75aR6H3DiFBRphXILYeRjdHOsN5oiCA9inWjwgM/3joA1gyRry', 'Receptionist', 'Mary Joy.', '69922224', 'recept@gmail.com'),
+(4, 'Naomi', '$2y$10$eiQKkbtvv0yI0pzpx/V9G.RJE3rpkXKWNMUYfRLQy1eNyrVZpOVey', 'PetOwner', 'Naomi Muzam', '64321098', 'naomi@gmail.com'),
+(5, ' Love', '$2y$10$JUye77.1SGgSMJ3DRhbWj./9rxKBPuC/q0cN.Y7cEy784.y6CRw/e', 'PetOwner', 'Muzy Love', '687003047', 'kedam409@gmail.com'),
+(8, 'Grace', '$2y$10$pAMJ1m3ckrY28gdKzcAk2OTa4Gbq43UmJbj.Woken35ETz6Ycwegi', 'PetOwner', 'Angle Grace', '68888000', 'grace@gmail.com'),
+(9, 'Besong', '$2y$10$/VRJbGtbMZauOQ9PlmcRWuV.ph2jc1GlIqH9pFLUYRcCjO/U.Cgku', 'PetOwner', 'Besong Syndy', '64321906', 'syndy@gmail.com'),
+(10, 'Tracy', '$2y$10$aLB1ig4POKoyT2BxUNXiyuIJWT6pKiDLVVC8p/gLzPA7jaZVydpyO', 'Veterinarian', 'Dr. Mbah Tracy ', '65700001', 'tracy@gmail.com');
 
 --
 -- Indexes for dumped tables
@@ -237,6 +254,12 @@ ALTER TABLE `inventory`
 ALTER TABLE `invoices`
   ADD PRIMARY KEY (`invoice_id`),
   ADD KEY `appointment_id` (`appointment_id`);
+
+--
+-- Indexes for table `messages`
+--
+ALTER TABLE `messages`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `notifications`
@@ -295,6 +318,12 @@ ALTER TABLE `invoices`
   MODIFY `invoice_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
+-- AUTO_INCREMENT for table `messages`
+--
+ALTER TABLE `messages`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
@@ -316,7 +345,7 @@ ALTER TABLE `pets`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- Constraints for dumped tables

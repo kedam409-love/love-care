@@ -13,6 +13,10 @@ $totalOwners = $conn->query("SELECT COUNT(*) FROM owners")->fetch_row()[0];
 $totalAppointments = $conn->query("SELECT COUNT(*) FROM appointments")->fetch_row()[0];
 $totalPayments = $conn->query("SELECT COALESCE(SUM(amount),0) FROM invoices")->fetch_row()[0];
 
+// Inventory stats
+$totalInventory = $conn->query("SELECT COUNT(*) FROM inventory")->fetch_row()[0];
+$totalStockValue = $conn->query("SELECT COALESCE(SUM(quantity * unit_price),0) FROM inventory")->fetch_row()[0];
+
 // Low stock items
 $lowStock = $conn->query("SELECT item_name, quantity, threshold 
                           FROM inventory 
@@ -65,6 +69,7 @@ while($row = $paymentsData->fetch_assoc()) {
     <title>Admin Dashboard - Love Care VMS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/alerts.css">
+    <link rel="stylesheet" href="../assets/css/res.css">
     <style>
         body { font-family:'Segoe UI', sans-serif; background:#f4f4f4; color:#333333; margin:0; }
         .container { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:20px; padding:30px; }
@@ -76,6 +81,8 @@ while($row = $paymentsData->fetch_assoc()) {
         ul li { padding:5px 0; }
         .charts { display:flex; flex-wrap:wrap; justify-content:center; gap:30px; margin:30px; }
         canvas { background:#fff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); padding:20px; }
+        .alert-danger { color:#fff; background:#e74c3c; padding:5px; border-radius:4px; }
+        .alert-warning { color:#fff; background:#f39c12; padding:5px; border-radius:4px; }
         .btn-blue { background:#1e90ff; color:white; padding:10px 20px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; }
         .btn-blue:hover { background:#005cbf; }
         .btn-green { background:#27ae60; color:white; padding:10px 20px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; }
@@ -91,6 +98,10 @@ while($row = $paymentsData->fetch_assoc()) {
         <div class="card"><div class="icon"><i class="fa-solid fa-user"></i></div><h3>Total Owners</h3><p><?php echo $totalOwners; ?></p></div>
         <div class="card"><div class="icon"><i class="fa-solid fa-calendar-check"></i></div><h3>Total Appointments</h3><p><?php echo $totalAppointments; ?></p></div>
         <div class="card"><div class="icon"><i class="fa-solid fa-dollar-sign"></i></div><h3>Total Payments</h3><p><?php echo number_format($totalPayments,2); ?> FCFA</p></div>
+        <div class="card"><div class="icon"><i class="fa-solid fa-boxes"></i></div><h3>Inventory</h3>
+            <p><?php echo $totalInventory; ?> items in stock</p>
+            <p>Total Value: <?php echo number_format($totalStockValue,2); ?> FCFA</p>
+        </div>
     </div>
 
     <div class="container">

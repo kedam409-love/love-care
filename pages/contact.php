@@ -1,59 +1,118 @@
 <?php
 // Public Contact page — no login required
-session_start();
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Contact - Veterinary Management System</title>
+    <title>Contact Us - Love Care Veterinary Clinic</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
-        header { background: #006699; color: white; padding: 20px; text-align: center; }
-        nav { background: #333; padding: 10px; text-align: center; }
-        nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
-        nav a:hover { color: #ffcc00; }
-        .container { padding: 40px; max-width: 900px; margin: auto; background: #fff; border-radius: 8px; box-shadow: 0 0 10px #ccc; }
-        h2 { color: #006699; }
-        form { margin-top: 20px; }
-        input, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
-        input[type=submit] { background: #006699; color: white; border: none; cursor: pointer; }
-        input[type=submit]:hover { background: #004466; }
-        .message { margin-top: 20px; font-weight: bold; color: green; }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: url('../assets/cats.jpg') no-repeat center center/cover;
+            color: #333;
+        }
+        .overlay {
+            background: rgba(255,255,255,0.6); /* semi-transparent */
+            backdrop-filter: blur(6px);        /* frosted glass effect */
+            min-height: 100vh;
+            padding: 20px;
+        }
+        header {
+            background: #024363;
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header img.logo {
+            height: 50px;
+        }
+        nav a {
+            color: white;
+            margin: 0 15px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        nav a:hover {
+            color: #ffcc00;
+        }
+        .contact-section {
+            max-width: 800px;
+            margin: 40px auto;
+            text-align: center;
+        }
+        .contact-section h1 {
+            color: #0483c3;
+            margin-bottom: 20px;
+        }
+        .contact-section p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        input, textarea {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            background: #00aaff;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0088cc;
+        }
+        footer {
+            background: rgba(0,0,0,0.8);
+            color: white;
+            text-align: center;
+            padding: 15px;
+            margin-top: 40px;
+        }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Contact Us</h1>
-    </header>
+    <div class="overlay">
+        <header>
+            <img src="../assets/logo.png" alt="Clinic Logo" class="logo">
+            <nav>
+                <a href="../index.php">Home</a>
+                <a href="about.php">About</a>
+                <a href="contact.php">Contact</a>
+                <a href="login.php">Login</a>
+            </nav>
+        </header>
 
-    <nav>
-        <a href="index.php">Home</a>
-        <a href="about.php">About</a>
-        <a href="contact.php">Contact</a>
-        <a href="logout.php">Logout</a>
-    </nav>
+        <div class="contact-section">
+            <h1>Contact Love Care Veterinary Clinic</h1>
+            <p>We’d love to hear from you! Please reach out with any questions, feedback, or appointment requests.</p>
 
-    <div class="container">
-        <h2>Get in Touch</h2>
-        <p>
-            Have questions about the Veterinary Management System? Need support or want to share feedback? 
-            Fill out the form below or reach us directly at <strong>muzylovelois@gmail.com</strong>.
-        </p>
+            <form action="send_message.php" method="post">
+                <input type="text" name="name" placeholder="Your Name" required>
+                <input type="email" name="email" placeholder="Your Email" required>
+                <textarea name="message" rows="5" placeholder="Your Message" required></textarea>
+                <button type="submit"><i class="fa-solid fa-paper-plane"></i> Send Message</button>
+            </form>
+        </div>
 
-        <form method="POST" action="contact.php">
-            <input type="text" name="name" placeholder="Your Name" required>
-            <input type="email" name="email" placeholder="Your Email" required>
-            <textarea name="message" rows="6" placeholder="Your Message" required></textarea>
-            <input type="submit" name="send" value="Send Message">
-        </form>
-
-        <?php
-        if (isset($_POST['send'])) {
-            $name = htmlspecialchars($_POST['name']);
-            $email = htmlspecialchars($_POST['email']);
-            echo "<p class='message'>Thank you, $name! We’ll get back to you at $email.</p>";
-        }
-        ?>
+        <footer>
+            &copy; <?php echo date("Y"); ?> Love Care Veterinary Clinic. 
+            Contact us: kedam409@gmail.com | +237 621726670
+        </footer>
     </div>
 </body>
 </html>

@@ -34,6 +34,15 @@ $recentConsultations = $conn->query("
     ORDER BY a.appointment_date DESC
     LIMIT 3
 ");
+
+// Handle restock request
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['restock_request'])) {
+    $message = "Receptionist requested restock. {$inventoryCount} items below threshold.";
+    $stmt = $conn->prepare("INSERT INTO notifications (message, status, notification_date) VALUES (?, 'Unread', NOW())");
+    $stmt->bind_param("s", $message);
+    $stmt->execute();
+    $success = "Restock request sent to Admin.";
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -41,6 +50,7 @@ $recentConsultations = $conn->query("
     <title>Receptionist Dashboard - VMS</title>
     <link rel="stylesheet" href="../assets/css/theme.css">
     <link rel="stylesheet" href="../assets/css/alerts.css">
+    <link rel="stylesheet" href="../assets/css/res.css">
     <link rel="stylesheet" href="../assets/css/nav.css">
     <link rel="stylesheet" href="../assets/css/badges.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -52,7 +62,8 @@ $recentConsultations = $conn->query("
     <div class="container">
         <div class="card">
             <h1><i class="fa-solid fa-gauge"></i> Receptionist Dashboard</h1>
-            <p>Welcome, <?php echo $_SESSION['user']['full_name']; ?>! You can manage Pet Owners, Pets, Appointments, Billing, Inventory, Consultations, and Notifications.</p>
+           <p>Welcome, <?php echo $_SESSION['user']['full_name']; ?>! You can manage Pet Owners, Pets, Appointments, Billing, Inventory, Consultations, and Notifications.</p>
+
         </div>
     </div>
 
@@ -127,7 +138,12 @@ $recentConsultations = $conn->query("
                     </li>
                 <?php } ?>
             </ul>
-            <a class="btn-blue" href="inventory.php">Go to Inventory</a>
+            <a class="btn-blue" href="inventory.php">View Inventory</a>
+            <?php if ($inventoryCount > 0): ?>
+                <form method="POST" style="margin-top:10px;">
+                    <input type="submit" name="restock_request" value="Request Restock" class="btn-green">
+                </form>
+            <?php endif; ?>
         </div>
 
         <!-- Consultations -->
@@ -145,7 +161,7 @@ $recentConsultations = $conn->query("
             <a class="btn-green" href="consultations.php">Go to Consultations</a>
         </div>
 
-        <!-- Notifications -->
+               <!-- Notifications -->
         <div class="card">
             <h3><i class="fa-solid fa-bell"></i> Notifications</h3>
             <p>Unread Notifications: <strong><?php echo $notificationsCount; ?></strong></p>
@@ -160,6 +176,14 @@ $recentConsultations = $conn->query("
             <a class="btn-green" href="notifications.php">View Notifications</a>
         </div>
     </div>
+
+    <?php if (isset($success)): ?>
+        <div class="container">
+            <div class="card alert alert-success" style="text-align:center;">
+                <?php echo $success; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <div class="container">
         <div class="card" style="text-align:center;">

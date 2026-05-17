@@ -5,14 +5,9 @@ body {
   background: #f4f4f4; /* Light Gray */
   color: #333333;
   margin: 0;
+
 }
 
-header {
-  background: #001f3f; /* Navy Blue */
-  color: white;
-  padding: 20px;
-  text-align: center;
-}
 
 table {
   width: 90%;
@@ -44,7 +39,10 @@ form {
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-input, select {
+/* Inputs (text/number/select) */
+input[type=text],
+input[type=number],
+select {
   width: 100%;
   padding: 8px;
   margin: 8px 0;
@@ -52,16 +50,19 @@ input, select {
   border-radius: 6px;
 }
 
+/* Default submit buttons */
 input[type=submit] {
-  background: #1e90ff; /* Blue */
+  width: auto;            /* shrink to fit text */
+  background: #1e90ff;    /* Blue */
   color: white;
   border: none;
   cursor: pointer;
   font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 5px;
 }
-
 input[type=submit]:hover {
-  background: #005cbf; /* Darker Blue */
+  background: #005cbf;    /* Darker Blue */
 }
 
 a.delete {
@@ -82,6 +83,7 @@ a.edit {
   font-weight: bold;
   color: #ff9800; /* Orange */
 }
+
 /* --- Dashboard Cards --- */
 .container {
   display: flex;
@@ -100,10 +102,7 @@ a.edit {
   min-width: 280px;
   transition: transform 0.2s ease;
 }
-
-.card:hover {
-  transform: translateY(-5px);
-}
+.card:hover { transform: translateY(-5px); }
 
 .card h3 {
   margin-bottom: 10px;
@@ -112,18 +111,9 @@ a.edit {
   display: flex;
   align-items: center;
 }
+.card h3 i { margin-right: 8px; color: #27ae60; }
 
-.card h3 i {
-  margin-right: 8px;
-  color: #27ae60; /* Green accent */
-}
-
-.card ul {
-  list-style: none;
-  padding: 0;
-  margin: 10px 0;
-}
-
+.card ul { list-style: none; padding: 0; margin: 10px 0; }
 .card ul li {
   margin-bottom: 6px;
   padding: 6px;
@@ -133,7 +123,7 @@ a.edit {
 /* --- Buttons --- */
 .btn-blue, .btn-green {
   display: inline-block;
-  padding: 8px 14px;
+  padding: 6px 10px;
   border-radius: 5px;
   text-decoration: none;
   font-weight: bold;
@@ -144,14 +134,46 @@ a.edit {
   background-color: #1e90ff;
   color: #fff;
 }
+.btn-blue:hover { background-color: #005cbf; }
 
 .btn-green {
   background-color: #27ae60;
   color: #fff;
 }
+.btn-green:hover { background-color: #1e8449; }
 
-.btn-blue:hover, .btn-green:hover {
-  opacity: 0.85;
+/* Compact helper */
+.btn-small {
+  padding: 4px 8px;
+  font-size: 0.8em;
+  margin: 2px;
+  border-radius: 5px;
+}
+
+/* --- Export Buttons --- */
+.export-btn {
+  text-align: center;
+  margin: 20px 0;
+}
+.export-btn input[type=submit] {
+  width: auto !important;   /* override global width */
+  display: inline-block;
+  margin: 4px;
+  font-size: 0.85em;
+}
+.export-btn input[name=export_csv] {
+  background-color: #27ae60;
+  color: #fff;
+}
+.export-btn input[name=export_csv]:hover {
+  background-color: #1e8449;
+}
+.export-btn input[name=export_pdf] {
+  background-color: #1e90ff;
+  color: #fff;
+}
+.export-btn input[name=export_pdf]:hover {
+  background-color: #005cbf;
 }
 
 /* --- Badges --- */
@@ -162,7 +184,6 @@ a.edit {
   margin-left: 8px;
   color: #fff;
 }
-
 .badge-scheduled { background-color: #17a2b8; }
 .badge-completed { background-color: #28a745; }
 .badge-cancelled { background-color: #dc3545; }
@@ -173,7 +194,5 @@ a.edit {
 
 /* --- Responsive --- */
 @media (max-width: 768px) {
-  .card {
-    flex: 1 1 100%;
-  }
+  .card { flex: 1 1 100%; }
 }
